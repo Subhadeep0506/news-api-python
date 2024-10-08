@@ -1,10 +1,8 @@
-from firebase_admin import initialize_app
-from firebase_admin.credentials import Certificate
 from config.firebase_config import FirebaseConfig
 from errors.firebase_error import *
 
 
-class FirebaseDatabaseClient:
+class SupabaseDatabaseClient:
     def __init__(self):
         self.config = FirebaseConfig.get_config()
         self.credentials = None
