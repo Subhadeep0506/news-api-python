@@ -6,13 +6,16 @@ class SupabaseUserInvalidCredentialsException(Exception):
     pass
 
 
-class SupabaseUserAlreadyExistsException(Exception):
+class SupabaseUserSignupException(Exception):
     pass
 
 
-class SupabaseUserNotVerifiedException(Exception):
+class SupabaseWeakPasswordException(Exception):
     pass
 
 
-class SupabaseVerifyUserMailNotSentException(Exception):
+class SupabaseUserLoginException(Exception):
+    pass
+
+class SupabaseUserLogoutException(Exception):
     pass

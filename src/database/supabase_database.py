@@ -1,25 +1,22 @@
-from config.firebase_config import FirebaseConfig
-from errors.firebase_error import *
+from config.supabase_config import SupabaseConfig
+from errors.supabase_error import *
 
 
 class SupabaseDatabaseClient:
     def __init__(self):
-        self.config = FirebaseConfig.get_config()
+        self.config = SupabaseConfig.get_config()
         self.credentials = None
-        self.firebase = None
+        self.app = None
 
     def __get_app_creds(self):
         if self.credentials is None:
-            self.credentials = Certificate("secrets/firebase-credentials.json")
+            self.credentials = None
 
     def initialize_app(self):
         try:
             if self.firebase is None:
-                self.__get_app_creds()
-                self.firebase = initialize_app(
-                    credential=self.credentials, options=self.config
-                )
+                pass
         except ValueError as e:
-            raise FirebaseAppInitializationException(
+            raise SupabaseAppInitializationException(
                 f"Failed to initialize the app: {e}"
             )
