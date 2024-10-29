@@ -1,69 +1,64 @@
 import uvicorn
+from fastapi import Depends, FastAPI
+from sqlalchemy.orm import Session
 
-from supabase.client import Client, SupabaseAuthClient
-from fastapi import FastAPI, Depends, HTTPException
-from src.auth.supabase_auth import (
-    signup_user,
-    login_user,
-    get_current_session,
-    logout_user,
-)
-from src.core.supabase.supabase_client import SupabaseClient
-from src.models.user import UserSignup, UserLogin
-from src.errors.supabase_error import *
+from authentication import auth
+from authentication.auth_bearer import JWTBearer
+from database.database import Base, SessionLocal, engine
+from models.user import User
+from schemas.password import ChangePassword
+from schemas.token import TokenSchema
+from schemas.user import UserCreate, UserLogin
+
+Base.metadata.create_all(engine)
+
+
+def get_session():
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+
 
 app = FastAPI()
-supabase_client: Client = SupabaseClient()
-
-
-def get_auth_client():
-    return supabase_client.auth
 
 
 @app.get("/")
-def root():
+def home():
     return {"message": "Hello from FastAPI"}
 
 
-@app.post("/signup")
-def signup(
-    user: UserSignup, auth_service: SupabaseAuthClient = Depends(get_auth_client)
+@app.post("/register")
+def register_user(user: UserCreate, session: Session = Depends(get_session)):
+    return auth.register_user(user=user, user_model=User, session=session)
+
+
+@app.post("/login", response_model=TokenSchema)
+def login(request: UserLogin, session: Session = Depends(get_session)):
+    return auth.login_user(user=request, user_model=User, db=session, request=request)
+
+
+@app.post("/logout")
+def logout(dependencies=Depends(JWTBearer()), session: Session = Depends(get_session)):
+    return auth.logout_user(dependencies=dependencies, db=session)
+
+
+@app.get("/users")
+def get_users(
+    dependencies=Depends(JWTBearer()), session: Session = Depends(get_session)
 ):
-    try:
-        response = signup_user(user, auth_service)
-        return {"message": response}
-    except Exception as e:
-        return HTTPException(status_code=400, detail=str(e))
+    return auth.list_users(dependencies=dependencies, db=session)
 
 
-@app.post("/login")
-def signup(
-    user: UserLogin, auth_service: SupabaseAuthClient = Depends(get_auth_client)
+@app.post("/change-password")
+def change_password(
+    request: ChangePassword,
+    dependencies=Depends(JWTBearer()),
+    session: Session = Depends(get_session),
 ):
-    try:
-        response = login_user(user, auth_service)
-        return {"message": response}
-    except Exception as e:
-        return HTTPException(status_code=400, detail=str(e))
-
-
-@app.get("/logout")
-def latest_session(auth_service: SupabaseAuthClient = Depends(get_auth_client)):
-    try:
-        response = logout_user(auth_service)
-        return {"message": response}
-    except Exception as e:
-        return HTTPException(status_code=400, detail=str(e))
-
-
-@app.get("/relogin")
-def latest_session(auth_service: SupabaseAuthClient = Depends(get_auth_client)):
-    try:
-        response = get_current_session(auth_service)
-        return {"message": response}
-    except Exception as e:
-        return HTTPException(status_code=400, detail=str(e))
+    return auth.change_password(request=request, db=session)
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8089)
+    uvicorn.run("main:app", host="127.0.0.1", port=8089, reload=True)
