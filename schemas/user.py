@@ -1,14 +1,14 @@
 from pydantic import BaseModel, EmailStr, Field, model_validator
 from core.auth.roles import Role
-
+from typing import Optional
 
 class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
-    role: Role = Role.USER
-    first_name: str
-    last_name: str
+    role: Optional[Role] = Role.USER
+    first_name: Optional[str] = ""
+    last_name: Optional[str] = ""
 
 class UserLogin(BaseModel):
     username: str = Field(default=None)
@@ -21,3 +21,8 @@ class UserLogin(BaseModel):
         if not username and not email:
             raise ValueError("Either username or email must be provided")
         return values
+
+class UserUpdate(BaseModel):
+    role: Optional[Role] = Role.USER
+    first_name: Optional[str] = ""
+    last_name: Optional[str] = ""

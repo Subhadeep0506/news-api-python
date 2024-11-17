@@ -1,12 +1,14 @@
 from datetime import datetime, timedelta
-from typing import Any, Union
-from jose import jwt
-from config.fastapi_config import FastAPIConfig
-from fastapi import HTTPException, status
 from functools import wraps
+from typing import Any, Union
+
+from fastapi import HTTPException, status
+from jose import jwt
+from sqlalchemy import desc
+
+from config.fastapi_config import FastAPIConfig
 from core.auth.hash import decodeJWT
 from models.token import Token
-from sqlalchemy import desc
 
 
 def create_access_token(subject: Union[str, Any], expires_delta: int = None) -> str:
@@ -17,7 +19,9 @@ def create_access_token(subject: Union[str, Any], expires_delta: int = None) -> 
             minutes=FastAPIConfig.ACCESS_TOKEN_EXPIRE_MINUTES
         )
     to_encode = {"exp": expires_delta, "sub": str(subject)}
-    encoded_jwt = jwt.encode(to_encode, FastAPIConfig.JWT_SECRET_KEY, FastAPIConfig.ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, FastAPIConfig.JWT_SECRET_KEY, FastAPIConfig.ALGORITHM
+    )
     return encoded_jwt
 
 
@@ -36,6 +40,8 @@ def create_refresh_token(subject: Union[str, Any], expires_delta: int = None) ->
 
 
 def token_required(func):
+    """Verifies the JWT token. Checks if user is loggedin."""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         payload = decodeJWT(kwargs["dependencies"])
@@ -50,7 +56,7 @@ def token_required(func):
             .first()
         )
         if data:
-            return func(kwargs["dependencies"], kwargs["db"])
+            return func(*args, **kwargs)
 
         else:
             raise HTTPException(
