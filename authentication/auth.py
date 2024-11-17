@@ -99,7 +99,7 @@ def login_user(
             detail=f"Failed to login user info. An exception occured: {e}",
         )
 
-
+@token_required
 def logout_user(dependencies: JWTBearer, db: Session):
     token = dependencies
     payload = decodeJWT(token)
