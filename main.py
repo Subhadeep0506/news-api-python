@@ -44,7 +44,14 @@ def register_user(user: UserCreate, session: Session = Depends(get_session)):
 
 @app.post("/login", response_model=TokenSchema)
 def login(request: UserLogin, session: Session = Depends(get_session)):
-    return auth.login_user(user=request, db=session, request=request)
+    return auth.login_user(db=session, request=request)
+
+
+@app.get("/me/info")
+def get_user_info(
+    dependencies=Depends(JWTBearer()), session: Session = Depends(get_session)
+):
+    return auth.get_user_info(dependencies=dependencies, db=session)
 
 
 @app.post("/me/logout")

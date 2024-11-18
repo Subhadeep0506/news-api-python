@@ -74,18 +74,28 @@ def test_login():
     except AssertionError:
         assert response.status_code == 400
 
-
 @pytest.mark.order(5)
+def test_get_user(auth_token):
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    response = client.get("/me/info", headers=headers)
+    # print(response)
+    try:
+        assert response.status_code == 200
+    except AssertionError:
+        assert response.status_code == 400
+
+@pytest.mark.order(6)
 def test_logout(auth_token):
     headers = {"Authorization": f"Bearer {auth_token}"}
     response = client.post("/me/logout", headers=headers)
+    # print(response)
     try:
         assert response.status_code == 200
     except AssertionError:
         assert response.status_code == 400
 
 
-@pytest.mark.order(6)
+@pytest.mark.order(7)
 def test_get_users(auth_token, auth_token_admin):
     headers = {"Authorization": f"Bearer {auth_token}"}
     response = client.get("/users", headers=headers)
@@ -102,7 +112,7 @@ def test_get_users(auth_token, auth_token_admin):
         assert response.status_code == 400
 
 
-@pytest.mark.order(7)
+@pytest.mark.order(8)
 def test_get_users_with_admin(auth_token_admin):
     headers = {"Authorization": f"Bearer {auth_token_admin}"}
     response = client.get("/users", headers=headers)
@@ -112,7 +122,7 @@ def test_get_users_with_admin(auth_token_admin):
         assert response.status_code == 400
 
 
-@pytest.mark.order(8)
+@pytest.mark.order(9)
 def test_update_user_info(auth_token):
     user_update_data = {
         "first_name": "Test User Name",
@@ -126,7 +136,7 @@ def test_update_user_info(auth_token):
         assert response.status_code == 400
 
 
-@pytest.mark.order(9)
+@pytest.mark.order(10)
 def test_delete_user_admin(auth_token_admin):
     headers = {"Authorization": f"Bearer {auth_token_admin}"}
     response = client.delete("/me/delete", headers=headers)
@@ -136,7 +146,7 @@ def test_delete_user_admin(auth_token_admin):
         assert response.status_code == 400
 
 
-@pytest.mark.order(10)
+@pytest.mark.order(11)
 def test_change_password(auth_token):
     new_password_data = {
         "old_password": "testpassword",
@@ -152,7 +162,7 @@ def test_change_password(auth_token):
         assert response.status_code == 400
 
 
-@pytest.mark.order(11)
+@pytest.mark.order(12)
 def test_delete_user():
     login_data = {"username": "testuser", "password": "newpassword"}
     response = client.post("/login", json=login_data)

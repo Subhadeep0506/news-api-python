@@ -23,7 +23,7 @@ def register_user(user: UserCreate, user_model: User, session: Session):
     try:
         existing_user = (
             session.query(User)
-            .filter_by(email=user.email, username=user.username)
+            .filter(or_(User.email == user.email, User.username == user.username))
             .first()
         )
     except Exception as e:
@@ -58,7 +58,6 @@ def register_user(user: UserCreate, user_model: User, session: Session):
 
 
 def login_user(
-    user: UserCreate,
     db: Session,
     request: UserLogin,
 ):
@@ -104,6 +103,23 @@ def login_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to login user info. An exception occured: {e}",
         )
+
+
+@token_required
+def get_user_info(dependencies, db: Session):
+    user_id = decodeJWT(dependencies)["sub"]
+    try:
+        user_info = db.query(User).filter(User.id == user_id).first()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch user info. An exception occured: {e}",
+        )
+    if user_info:
+        del user_info.password
+        return user_info
+    else:
+        return HTTPException(status.HTTP_404_NOT_FOUND, "User not found.")
 
 
 @token_required
