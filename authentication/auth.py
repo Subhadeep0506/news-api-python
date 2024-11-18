@@ -19,16 +19,22 @@ from schemas.password import ChangePassword
 from schemas.user import UserCreate, UserLogin, UserUpdate
 
 
-def register_user(user: UserCreate, user_model: User, session):
+def register_user(user: UserCreate, user_model: User, session: Session):
     try:
-        existing_user = session.query(User).filter_by(email=user.email).first()
+        existing_user = (
+            session.query(User)
+            .filter_by(email=user.email, username=user.username)
+            .first()
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to register user info. An exception occured: {e}",
         )
     if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(
+            status_code=400, detail="Email/Username already registered."
+        )
     encrypted_password = get_hashed_password(user.password)
     new_user = user_model(
         username=user.username,
@@ -43,7 +49,7 @@ def register_user(user: UserCreate, user_model: User, session):
         session.add(new_user)
         session.commit()
         session.refresh(new_user)
-        return {"message": "User created successfully"}
+        return {"message": "User created successfully."}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -70,13 +76,13 @@ def login_user(
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect Email/Username or Password",
+            detail="Incorrect Email/Username or Password.",
         )
     hashed_pass = user.password
     if not verify_password(request.password, hashed_pass):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect Email/Username or Password",
+            detail="Incorrect Email/Username or Password.",
         )
 
     access = create_access_token(user.id)
@@ -98,6 +104,7 @@ def login_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to login user info. An exception occured: {e}",
         )
+
 
 @token_required
 def logout_user(dependencies: JWTBearer, db: Session):
@@ -154,19 +161,19 @@ def change_password(request: ChangePassword, dependencies, db: Session):
         )
     if user is None:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="User not found"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="User not found."
         )
 
     if not verify_password(request.old_password, user.password):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid old password"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid old password."
         )
 
     encrypted_password = get_hashed_password(request.new_password)
     user.password = encrypted_password
     try:
         db.commit()
-        return {"message": "Password changed successfully"}
+        return {"message": "Password changed successfully."}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -187,7 +194,7 @@ def list_users(dependencies, db: Session):
     if user_info is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect Email/Username or Password",
+            detail="Incorrect Email/Username or Password.",
         )
     user_role = user_info.role
 
@@ -198,7 +205,7 @@ def list_users(dependencies, db: Session):
         return {"users": users}
     else:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not Authorized"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not Authorized."
         )
 
 
@@ -215,7 +222,7 @@ def update_user(user_update: UserUpdate, dependencies, db: Session):
     if user_info is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect Email/Username or Password",
+            detail="Incorrect Email/Username or Password.",
         )
     if user_update.first_name:
         user_info.first_name = user_update.first_name
@@ -226,7 +233,7 @@ def update_user(user_update: UserUpdate, dependencies, db: Session):
     try:
         db.commit()
         db.refresh(user_info)
-        return {"message": "User updated successfully"}
+        return {"message": "User updated successfully."}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -242,11 +249,11 @@ def delete_user(dependencies, db: Session):
 
         if user is None:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found."
             )
         db.delete(user)
         db.commit()
-        return {"message": "User  deleted successfully"}
+        return {"message": "User  deleted successfully."}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -266,7 +273,7 @@ def delete_user_by_id(user_id: str, dependencies, db: Session):
         )
     if requester is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Requester not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Requester not found."
         )
     if requester.role != Role.ADMIN:
         raise HTTPException(
@@ -276,12 +283,12 @@ def delete_user_by_id(user_id: str, dependencies, db: Session):
     user_to_delete = db.query(User).filter(User.id == user_id).first()
     if user_to_delete is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found."
         )
     try:
         db.delete(user_to_delete)
         db.commit()
-        return {"message": "User deleted successfully"}
+        return {"message": "User deleted successfully."}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
