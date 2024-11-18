@@ -1,0 +1,7 @@
+.github
+.idx
+.pytest_cache
+.venv
+.vscode
+notebooks
+**/__pycache__/
